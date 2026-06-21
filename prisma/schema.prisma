@@ -1,0 +1,282 @@
+// Perpustakaan ITK - Prisma Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex", "fullTextSearch"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUM DEFINITIONS
+// ============================================================
+
+enum UserRole {
+  MAHASISWA
+  ADMIN
+}
+
+enum CopyStatus {
+  AVAILABLE
+  BOOKED
+  BORROWED
+  DAMAGED
+  LOST
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum BorrowingStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+  LOST
+}
+
+enum FineStatus {
+  UNPAID
+  PAID
+  WAIVED
+}
+
+enum NotificationType {
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BORROWING_REMINDER
+  BORROWING_OVERDUE
+  EXTENSION_APPROVED
+  EXTENSION_REJECTED
+  RETURN_CONFIRMED
+  FINE_ISSUED
+  GENERAL
+}
+
+// ============================================================
+// USER & AUTH
+// ============================================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(MAHASISWA)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student?
+  admin   Admin?
+
+  @@map("users")
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  nim       String   @unique
+  name      String
+  phone     String?
+  address   String?
+  faculty   String?
+  major     String?
+  year      Int?
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+  borrowings    Borrowing[]
+  notifications Notification[]
+
+  @@map("students")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+// ============================================================
+// BOOKS & CATEGORIES
+// ============================================================
+
+model BookCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?  @default("#3b82f6")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  books Book[]
+
+  @@map("book_categories")
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  isbn        String?  @unique
+  title       String
+  author      String
+  publisher   String?
+  year        Int?
+  categoryId  String
+  description String?  @db.Text
+  coverUrl    String?
+  pages       Int?
+  language    String?  @default("Indonesia")
+  location    String?
+  totalCopies Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category BookCategory @relation(fields: [categoryId], references: [id])
+  copies   BookCopy[]
+
+  @@fulltext([title, author])
+  @@map("books")
+}
+
+model BookCopy {
+  id         String     @id @default(cuid())
+  bookId     String
+  copyNumber String
+  status     CopyStatus @default(AVAILABLE)
+  condition  String?    @default("Baik")
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  book       Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+  borrowings Borrowing[]
+
+  @@unique([bookId, copyNumber])
+  @@map("book_copies")
+}
+
+// ============================================================
+// BOOKING
+// ============================================================
+
+model Booking {
+  id          String        @id @default(cuid())
+  studentId   String
+  bookCopyId  String
+  status      BookingStatus @default(PENDING)
+  bookingDate DateTime      @default(now())
+  expiryDate  DateTime
+  notes       String?
+  adminNotes  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  bookCopy  BookCopy  @relation(fields: [bookCopyId], references: [id])
+  borrowing Borrowing?
+
+  @@map("bookings")
+}
+
+// ============================================================
+// BORROWING
+// ============================================================
+
+model Borrowing {
+  id             String          @id @default(cuid())
+  studentId      String
+  bookCopyId     String
+  bookingId      String?         @unique
+  status         BorrowingStatus @default(ACTIVE)
+  borrowDate     DateTime        @default(now())
+  dueDate        DateTime
+  returnDate     DateTime?
+  extensionCount Int             @default(0)
+  maxExtensions  Int             @default(2)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  student      Student  @relation(fields: [studentId], references: [id])
+  bookCopy     BookCopy @relation(fields: [bookCopyId], references: [id])
+  booking      Booking? @relation(fields: [bookingId], references: [id])
+  fines        Fine[]
+  returnRecord Return?
+
+  @@map("borrowings")
+}
+
+// ============================================================
+// RETURN
+// ============================================================
+
+model Return {
+  id          String   @id @default(cuid())
+  borrowingId String   @unique
+  returnDate  DateTime @default(now())
+  condition   String?  @default("Baik")
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  borrowing Borrowing @relation(fields: [borrowingId], references: [id])
+
+  @@map("returns")
+}
+
+// ============================================================
+// FINE / DENDA
+// ============================================================
+
+model Fine {
+  id          String     @id @default(cuid())
+  borrowingId String
+  amount      Int
+  daysLate    Int        @default(0)
+  reason      String
+  status      FineStatus @default(UNPAID)
+  paidDate    DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  borrowing Borrowing @relation(fields: [borrowingId], references: [id])
+
+  @@map("fines")
+}
+
+// ============================================================
+// NOTIFICATION
+// ============================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  studentId String
+  title     String
+  message   String           @db.Text
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  relatedId String?
+  createdAt DateTime         @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

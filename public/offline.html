@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Perpustakaan ITK</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #1E40AF 0%, #1d4ed8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 400px;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 1.5rem;
+      animation: pulse 2s infinite;
+    }
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    p { opacity: 0.85; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem; }
+    .btn {
+      background: white;
+      color: #1E40AF;
+      border: none;
+      padding: 0.875rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: scale(1.02); }
+    .badge {
+      margin-top: 2rem;
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+    }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📚</div>
+    <h1>Tidak Ada Koneksi</h1>
+    <p>
+      Sepertinya kamu sedang offline. Periksa koneksi internet kamu dan coba lagi untuk mengakses Perpustakaan ITK.
+    </p>
+    <button class="btn" onclick="window.location.reload()">
+      🔄 Coba Lagi
+    </button>
+    <div class="badge">Perpustakaan Institut Teknologi Kalimantan</div>
+  </div>
+</body>
+</html>
