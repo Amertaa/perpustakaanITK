@@ -75,7 +75,6 @@ CREATE DATABASE perpustakaan_itk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 ```
 
 ### 4. Konfigurasi Environment
-
 ```bash
 # Salin file .env.example menjadi .env
 cp .env.example .env
