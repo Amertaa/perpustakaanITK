@@ -3,7 +3,7 @@ import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
-  title: 'Perpustakaan ITK',
+  title: 'Sipus ITK',
   description: 'Sistem Booking dan Peminjaman Buku Perpustakaan Institut Teknologi Kalimantan',
   manifest: '/manifest.json',
   appleWebApp: {
