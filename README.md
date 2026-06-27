@@ -55,28 +55,112 @@ Aplikasi Progressive Web App (PWA) untuk sistem booking dan peminjaman buku Perp
 
 ## Cara Instalasi
 
-### 1. Prasyarat
+### Opsi A: Menggunakan Docker (Direkomendasikan)
+
+Cara ini menjalankan MySQL dan phpMyAdmin via Docker, sedangkan aplikasi Next.js dijalankan secara lokal.
+
+#### 1. Prasyarat
+- Node.js >= 18
+- Docker & Docker Compose
+- Git
+
+#### 2. Clone & Install Dependencies
+
+```bash
+npm install
+```
+
+#### 3. Jalankan Database dengan Docker
+
+```bash
+# Jalankan MySQL + phpMyAdmin di background
+docker compose up -d
+```
+
+Setelah berhasil, layanan yang berjalan:
+| Layanan | URL | Keterangan |
+|---|---|---|
+| MySQL | `localhost:3307` | Database utama |
+| phpMyAdmin | http://localhost:8080 | GUI manajemen database |
+
+Login phpMyAdmin: username `root`, password `root`.
+
+#### 4. Konfigurasi Environment
+
+```bash
+cp .env.example .env
+```
+
+Edit file `.env`, sesuaikan `DATABASE_URL` untuk koneksi ke MySQL Docker:
+```env
+DATABASE_URL="mysql://root:root@localhost:3307/perpustakaan_itk"
+JWT_SECRET="ganti-dengan-string-random-panjang-minimal-32-karakter"
+```
+
+> **Catatan:** Port MySQL di Docker Compose adalah `3307` (bukan `3306` default), dan password root adalah `root`.
+
+#### 5. Migrasi & Seed Database
+
+```bash
+# Generate Prisma client
+npm run db:generate
+
+# Push schema ke database
+npm run db:push
+
+# Seed data awal (kategori, buku, akun demo)
+npm run db:seed
+```
+
+#### 6. Jalankan Aplikasi
+
+```bash
+# Development
+npm run dev
+
+# Production build
+npm run build && npm start
+```
+
+Buka browser: **http://localhost:3000**
+
+#### Menghentikan Docker
+
+```bash
+# Stop container (data tetap tersimpan)
+docker compose stop
+
+# Stop dan hapus container (data tetap di volume)
+docker compose down
+
+# Stop dan hapus semua termasuk data volume
+docker compose down -v
+```
+
+---
+
+### Opsi B: Instalasi Manual (Tanpa Docker)
+
+#### 1. Prasyarat
 - Node.js >= 18
 - MySQL >= 8.0
 - Git
 
-### 2. Clone & Install
+#### 2. Clone & Install
 
 ```bash
-# Install dependencies
 npm install
 ```
 
-### 3. Setup Database
+#### 3. Setup Database
 
 ```sql
 -- Buat database di MySQL
 CREATE DATABASE perpustakaan_itk CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 4. Konfigurasi Environment
+#### 4. Konfigurasi Environment
 ```bash
-# Salin file .env.example menjadi .env
 cp .env.example .env
 ```
 
@@ -86,20 +170,15 @@ DATABASE_URL="mysql://root:password@localhost:3306/perpustakaan_itk"
 JWT_SECRET="ganti-dengan-string-random-panjang"
 ```
 
-### 5. Migrasi & Seed Database
+#### 5. Migrasi & Seed Database
 
 ```bash
-# Generate Prisma client
 npm run db:generate
-
-# Push schema ke database (development)
 npm run db:push
-
-# Seed data awal (kategori, buku, akun demo)
 npm run db:seed
 ```
 
-### 6. Jalankan Aplikasi
+#### 6. Jalankan Aplikasi
 
 ```bash
 # Development
@@ -219,18 +298,39 @@ Mahasiswa → Cari Buku → Booking (PENDING)
 
 ## Deployment
 
-### Docker (Opsional)
+### Docker Compose (Development)
+
+Lihat [Cara Instalasi - Opsi A](#opsi-a-menggunakan-docker-direkomendasikan) untuk menjalankan database via Docker.
+
+### Docker Full Stack (Production)
+
+Untuk mendeploy seluruh stack termasuk aplikasi Next.js:
 
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 COPY . .
 RUN npx prisma generate
 RUN npm run build
 EXPOSE 3000
 CMD ["npm", "start"]
+```
+
+Tambahkan service `app` ke `docker-compose.yaml`:
+```yaml
+app:
+  build: .
+  container_name: perpustakaan_app
+  restart: always
+  depends_on:
+    - db
+  environment:
+    DATABASE_URL: "mysql://root:root@db:3306/perpustakaan_itk"
+    JWT_SECRET: "ganti-dengan-string-random-panjang"
+  ports:
+    - "3000:3000"
 ```
 
 ### VPS + Nginx
