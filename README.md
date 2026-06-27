@@ -1,8 +1,8 @@
 # 📚 SIPUS ITK - Sistem Perpustakaan Institut Teknologi Kalimantan
 Made by :
-Marsa Naufal E'12
-Mustain Yusuf E'12
-Dafa Vieri Rizky Fitrah E'12
+- Marsa Naufal E'12
+- Mustain Yusuf E'12
+- Dafa Vieri Rizky Fitrah E'12
 
 Aplikasi Progressive Web App (PWA) untuk sistem booking dan peminjaman buku Perpustakaan Institut Teknologi Kalimantan (ITK).
 
